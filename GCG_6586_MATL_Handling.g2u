@@ -1,0 +1,420 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Main..Create(DashForm)
+Gui.Main..Caption("")
+Gui.Main..Size(1155,720)
+Gui.Main..MinX(0)
+Gui.Main..MinY(0)
+Gui.Main..Position(0,0)
+Gui.Main..MousePointer(0)
+Gui.Main..BarHelpButton(True,"","","",1.0.0.0,"1/13/2022 8:17:53 PM","",0,0,False)
+Gui.Main..AlwaysOnTop(False)
+Gui.Main..FontName("Tahoma")
+Gui.Main..FontSize(8.25)
+Gui.Main..ControlBox(True)
+Gui.Main..MaxButton(True)
+Gui.Main..MinButton(True)
+Gui.Main..Moveable(True)
+Gui.Main..Sizeable(True)
+Gui.Main..ShowInTaskBar(True)
+Gui.Main..TitleBar(True)
+Gui.Main..BarRefreshButton(True)
+Gui.Main..BarSaveButton(True,False)
+Gui.Main..Event(PrintClick,Main_PrintClick)
+Gui.Main..Event(ResetButtonClick,Main_ResetButtonClick)
+Gui.Main..Event(UnLoad,Main_UnLoad)
+Gui.Main.frameMain.Create(Frame)
+Gui.Main.frameMain.Enabled(True)
+Gui.Main.frameMain.Visible(True)
+Gui.Main.frameMain.Zorder(0)
+Gui.Main.frameMain.Size(1149,645)
+Gui.Main.frameMain.Position(3,3)
+Gui.Main.frameMain.Caption("")
+Gui.Main.frameMain.FontName("Tahoma")
+Gui.Main.frameMain.FontSize(8.25)
+Gui.Main.frameMain.Anchor(15)
+Gui.Main.gsgcMats.Create(GsGridControl)
+Gui.Main.gsgcMats.Enabled(True)
+Gui.Main.gsgcMats.Visible(True)
+Gui.Main.gsgcMats.Zorder(0)
+Gui.Main.gsgcMats.Size(1139,610)
+Gui.Main.gsgcMats.Position(5,37)
+Gui.Main.gsgcMats.Parent("frameMain")
+Gui.Main.gsgcMats.Anchor(15)
+Gui.Main.cmdMatReq.Create(Button)
+Gui.Main.cmdMatReq.Enabled(True)
+Gui.Main.cmdMatReq.Visible(True)
+Gui.Main.cmdMatReq.Zorder(0)
+Gui.Main.cmdMatReq.Size(129,23)
+Gui.Main.cmdMatReq.Position(13,8)
+Gui.Main.cmdMatReq.Caption("Material Requirement")
+Gui.Main.cmdMatReq.FontName("Tahoma")
+Gui.Main.cmdMatReq.FontSize(8.25)
+Gui.Main.cmdPrintPick.Create(Button)
+Gui.Main.cmdPrintPick.Enabled(True)
+Gui.Main.cmdPrintPick.Visible(True)
+Gui.Main.cmdPrintPick.Zorder(0)
+Gui.Main.cmdPrintPick.Size(128,23)
+Gui.Main.cmdPrintPick.Position(148,9)
+Gui.Main.cmdPrintPick.Caption("Pick Ticket")
+Gui.Main.cmdPrintPick.FontName("Tahoma")
+Gui.Main.cmdPrintPick.FontSize(8.25)
+Gui.Main.cmdPrinter.Create(Button)
+Gui.Main.cmdPrinter.Enabled(True)
+Gui.Main.cmdPrinter.Visible(True)
+Gui.Main.cmdPrinter.Zorder(0)
+Gui.Main.cmdPrinter.Size(153,23)
+Gui.Main.cmdPrinter.Position(989,8)
+Gui.Main.cmdPrinter.Caption("Printer or Paperless")
+Gui.Main.cmdPrinter.FontName("Tahoma")
+Gui.Main.cmdPrinter.FontSize(8.25)
+Gui.Main.cmdPrinter.Anchor(9)
+Gui.Main.cmdPrinter.Event(Click,cmdPrinter_Click)
+Program.Sub.ScreenSU.End
+
+'Developed for Harding Group
+'by DLF 1/24/2022
+'Note:  This is a phase 1 project.  Phase 2 is to move to paperless picking for work order.
+'the button and subroutine to set the printer handles the switch from paper pick ticket to paperless.
+
+Program.Sub.Preflight.Start
+v.Global.sUserName.Declare
+v.Global.bPaperless.Declare
+
+f.Data.Datatable.Create("dtPicks",True)
+f.Data.Datatable.AddColumn("dtPicks","JOB","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","SUFFIX","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","SEQ","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","SEQ_LABOR","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","PART","string","",20)
+f.Data.Datatable.AddColumn("dtPicks","LOC","string","",2)
+f.Data.Datatable.AddColumn("dtPicks","DESCRIPTION","string","",30)
+f.Data.Datatable.AddColumn("dtPicks","QUANTITY","float")
+f.Data.Datatable.AddColumn("dtPicks","BIN_1","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","BIN_2","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","BIN_3","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","BIN_TO","string","",6)
+f.Data.Datatable.AddColumn("dtPicks","SEQ_DUEDATE","date")
+f.Data.Datatable.AddColumn("dtPicks","ORIGIN","string","",8)
+f.Data.Datatable.AddColumn("dtPicks","DESTINATION","string","",8)
+f.Data.Datatable.AddColumn("dtPicks","REQ_BY","string","",15)
+f.Data.Datatable.AddColumn("dtPicks","DATE_REQ","date")
+f.Data.Datatable.AddColumn("dtPicks","PICKED_BY","string","",15)
+f.Data.Datatable.AddColumn("dtPicks","DATE_PICKED","date")
+f.Data.Datatable.AddColumn("dtPicks","DEL_BY","string","",15)
+f.Data.Datatable.AddColumn("dtPicks","DATE_DEL","date")
+f.Data.Datatable.AddColumn("dtPicks","STATUS","string","",10)
+f.Data.Datatable.AddColumn("dtPicks","TYPE","string","",1)
+f.Data.Datatable.AddColumn("dtPicks","COMMENTS","string","",350)
+f.Data.Datatable.AddColumn("dtPicks","PRIORITY","long")
+f.Data.Datatable.AddColumn("dtPicks","RUNID","long")
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+V.Local.sUser.Declare
+
+'hide and disable the printer button unless you are supervsr
+v.Local.sUser.Set(v.Caller.User.UCase)
+f.Intrinsic.Control.If(V.Local.sUser.Trim,=,"LAURAK",OR,V.Local.sUser.Trim,=,"KEVIN")
+	GUI.Main.cmdPrinter.Visible(True)
+	GUI.Main.cmdPrinter.Enabled(True)
+f.Intrinsic.Control.Else
+	gui.Main.cmdPrinter.Visible(False)
+	gui.Main.cmdPrinter.Enabled(False)
+f.Intrinsic.Control.EndIf
+
+
+f.Intrinsic.Control.CallSub(checkprint)
+f.Intrinsic.Control.CallSub(CheckSec)
+f.Intrinsic.Control.CallSub(TableExists)
+f.Intrinsic.Control.CallSub(GetData)
+f.Intrinsic.Control.CallSub(FormatGrid)
+f.Intrinsic.Control.CallSub(DeSerialize)
+
+
+gui.Main..Show
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Catching.Start
+v.Local.sError.declare(string)
+F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}","gcg_6586_MATL_Handling.g2u",V.Ambient.NewLine,v.Args.sub,V.Args.errorno,V.args.errordesc,V.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+F.Intrinsic.Control.CallSub(Main_Unload)
+Program.Sub.Catching.End
+
+Program.Sub.TableExists.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.bExists.Declare
+
+f.ODBC.Connection!con.opencompanyconnection
+
+f.ODBC.Connection!con.TableExists("GCG_6586_MATL_HNDL",v.Local.bExists)
+
+f.Intrinsic.Control.If(v.Local.bExists,=,False)
+	f.ODBC.Connection!con.Execute("CREATE TABLE GCG_6586_MATL_HNDL( TX_ID BIGINT, JOB CHAR(6), SUFFIX CHAR(3), SEQ CHAR(6), SEQ_LABOR CHAR(6), PART CHAR(20), LOC CHAR(2), DESCRIPTION CHAR(30), QUANTITY NUMERIC(12,4), BIN_1 CHAR(6), BIN_2 CHAR(6), BIN_3 CHAR(6), BIN_TO CHAR(6), SEQ_DUEDATE DATE, ORIGIN CHAR(8), DESTINATION CHAR(8), REQ_BY CHAR(15), DATE_REQ DATETIME, PICKED_BY CHAR(15), DATE_PICKED DATETIME, DEL_BY CHAR(15), DATE_DEL DATETIME, STATUS CHAR(10), TYPE CHAR(1), COMMENTS VARCHAR(350), PRIORITY INTEGER, RUNID BIGINT )")
+f.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!con.Close
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.TableExists.End
+
+Program.Sub.CheckSec.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sName.Declare
+v.Local.sFirst.Declare
+v.Local.sLast.Declare
+v.Local.sInitial.Declare
+
+f.Intrinsic.Control.If(v.Caller.Switches,=,"D")
+	f.Global.Security.GetFullName(v.Caller.User,v.Local.sName)
+	f.Intrinsic.String.Split(v.Local.sName," ",v.Local.sName)
+	f.Intrinsic.String.Left(v.Local.sName(0),1,v.Local.sFirst)
+	f.Intrinsic.String.Build("{0}{1}",v.Local.sFirst,v.Local.sName(1),v.Global.sUserName)
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.CheckSec.End
+
+Program.Sub.GetData.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+f.ODBC.Connection!con.opencompanyconnection
+'get data to temp datatable
+f.Data.Datatable.CreateFromSQL("dtTemp","con","select job, suffix, seq, seq_labor, part, loc, description, quantity, bin_1, bin_2, bin_3, bin_to, seq_duedate, origin, destination, req_by, cast(date_req as date) as date_req, picked_by, date_picked, del_by, date_del, status, type, comments, priority, runid from gcg_6586_matl_hndl",True)
+'merge to dtPicks main table.
+f.Data.Datatable.Merge("dtTemp","dtPicks","False",2)
+f.Data.Datatable.Close("dtTemp")
+
+f.ODBC.Connection!con.Close
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.GetData.End
+
+Program.Sub.FormatGrid.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sCols.Declare
+v.Local.iCount.Declare
+V.Local.sCaption.Declare
+
+gui.Main.gsgcMats.SuspendLayout
+
+f.Data.DataView.Create("dtPicks","dvPicks",22)
+gui.Main.gsgcMats.AddGridviewFromDataview("gvPicks","dtPicks","dvPicks")
+
+gui.Main.gsgcMats.SetGridviewProperty("gvPicks",v.Enum.GridViewPropertyNames!ShowAutoFilterRow,True)
+gui.Main.gsgcMats.SetGridviewProperty("gvPicks",v.Enum.GridViewPropertyNames!ColumnAutoWidth,False)
+gui.Main.gsgcMats.SetGridviewProperty("gvPicks",v.Enum.GridViewPropertyNames!AllowColumnResizing,True)
+
+f.Intrinsic.String.Split(v.DataTable.dtPicks.FieldNames,"*!*",v.Local.sCols)
+
+f.Intrinsic.Control.For(v.Local.iCount,0,v.Local.sCols.UBound,1)
+	f.Intrinsic.Control.SelectCase(v.Local.sCols(v.Local.iCount))
+		'text columns
+		f.Intrinsic.Control.CaseAny( "JOB","SUFFIX","SEQ","SEQ_LABOR","PART","LOC","DESCRIPTION","BIN_1","BIN_2","BIN_3","BIN_TO","SEQ_DUEDATE","ORIGIN","DESTINATION","REQ_BY","PICKED_BY","DEL_BY","STATUS","TYPE","COMMENTS")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Near")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Near")
+		'numeric fields
+		f.Intrinsic.Control.caseAny("RUNID","QUANTITY")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Far")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Far")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!DisplayCustomNumeric,"#,###")
+		
+		'date fields
+		f.Intrinsic.Control.CaseAny("DATE_REQ","DATE_PICKED","DATE_DEL")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Center")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Center")
+			gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!DisplayCustomDateTime,"MM/DD/YYYY")
+			
+	f.Intrinsic.Control.EndSelect
+	f.Intrinsic.String.Replace(v.Local.sCols(v.Local.iCount),"_"," ",v.Local.sCaption)
+	
+	gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!Caption,v.Local.sCaption.UCase)
+	gui.Main.gsgcMats.SetColumnProperty("gvPicks",v.Local.sCols(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,"True")
+	
+f.Intrinsic.Control.Next(v.Local.iCount)
+
+gui.Main.gsgcMats.MainView("gvPicks")
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.FormatGrid.End
+
+Program.Sub.Serialize.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sSerial.Declare
+v.Local.sSql.Declare
+v.Local.sUserID.Declare
+v.Local.dDate.Declare
+
+
+'format the date
+v.Local.dDate.Set(v.Ambient.Date)
+f.Intrinsic.String.Format(v.Local.dDate,"M/D/YYYY",V.Local.dDate)
+'get the user ID
+f.Global.Security.GetUserId(V.Caller.User,V.Caller.CompanyCode,V.Local.sUserID)
+
+'delete the old registry
+f.ODBC.Connection!comm.opencommonconnection
+f.Intrinsic.String.Build("delete from gs_registry where user_id = '{0}' and company = '{1}' and reg_id = 6586 and seq = '1000'", v.Local.sUserID,v.Caller.CompanyCode,v.Local.sSql)
+f.ODBC.Connection!comm.Execute(v.Local.sSql)
+f.ODBC.Connection!comm.Close
+
+'serialize the grid
+gui.Main.gsgcMats.Serialize("gvPicks",v.Local.sSerial)
+
+f.Global.Registry.AddValue(v.Caller.User.Trim,v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1000,False,"Serialize","True",0,-999.0,v.Local.dDate.PervasiveDate,12:00:00 AM,V.Local.sSerial)
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.Serialize.End
+
+Program.Sub.deserialize.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sSerialize.Declare
+v.Local.sUserID.Declare
+
+'get the user ID
+
+f.Global.Security.GetUserId(V.Caller.User,V.Caller.CompanyCode,V.Local.sUserID)
+'deserialize the grid
+f.Global.Registry.ReadValue(v.Local.sUserID,v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1000,6,"",V.Local.sSerialize)
+F.Intrinsic.Control.If(V.Local.sSerialize.Trim,<>,"")
+	GUI.Main.gsgcMats.Deserialize(V.Local.sSerialize)
+F.Intrinsic.Control.EndIf
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.deserialize.End
+
+Program.Sub.checkprint.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sReturn.Declare
+v.Local.dDate.Declare
+
+'this subroutine reads the registry for a special "paperless" registry entry.  If the bVal is False, then Harding hasn't gone paperless yet.  If it reads as True, then they are paperless.
+
+
+f.Global.Registry.ReadValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,0,"",v.local.sReturn)
+
+F.Intrinsic.Control.If(v.Local.sReturn,=,"")
+	f.Intrinsic.String.Build("Default Print Method not defined.{0}Please add a printer or set to paperless",v.Ambient.NewLine,v.Local.sReturn)
+	
+	f.Intrinsic.UI.Msgbox(v.Local.sReturn,"Printed or Paperless")
+	GUI.Main.cmdPrinter.BackColor(V.Enum.ThemeColors!ColorRed)
+'	f.Intrinsic.String.Format(v.Ambient.Date,"MM/DD/YYYY",V.Local.dDate)
+'	f.Global.Registry.AddValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,False,"Paperless","False",0,-999.0,v.Local.dDate.PervasiveDate,12:00:00 AM,"")
+'f.Intrinsic.Control.ElseIf(v.Local.sReturn,=,"Paperless")
+'	f.Global.Registry.ReadValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,0,"",v.Global.bPaperless)
+F.Intrinsic.Control.EndIf
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.checkprint.End
+
+Program.Sub.Main_PrintClick.Start
+Program.Sub.Main_PrintClick.End
+Program.Sub.Main_ResetButtonClick.Start
+Program.Sub.Main_ResetButtonClick.End
+
+Program.Sub.Main_UnLoad.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+f.Intrinsic.Control.CallSub(Serialize)
+
+f.Intrinsic.Control.If(v.ODBC.con.exists,=,True)
+	f.ODBC.Connection!con.Close
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.End
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.Main_UnLoad.End
+
+Program.Sub.cmdPrinter_Click.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sSql.Declare
+V.Local.sRet.Declare
+v.Local.sReturn.Declare
+v.Local.dDate.Declare
+V.Local.sPrinter.Declare
+
+'this subroutine is for setting up the default printer used for printing pick tickets.
+'it's also used for switching from printer to paperless when the time comes.
+
+
+f.Intrinsic.UI.MsgBoxExt("Printer or Paperless","Do you want to set the default printer, or switch to paperless?","24*!*Set Printer*!*Go Paperless",400,150)
+
+f.Intrinsic.Control.SelectCase(v.Ambient.AltBoxClick)
+	f.Intrinsic.Control.Case(3)
+		'setting the default printer to the registry key
+		f.ODBC.Connection!comm.opencommonconnection
+		f.Intrinsic.UI.MiniBrowser("Select Printer","comm","select printername from server_printers","Printer","150",v.Local.sRet)
+
+		f.Intrinsic.Control.If(v.Local.sRet,<>,v.Ambient.Cancel)
+			f.Intrinsic.String.Split(v.Local.sRet,",",v.Local.sRet)
+			v.Local.sPrinter.Set(v.Local.sRet(0))
+			f.Intrinsic.String.Build("delete from GS_Registry where company = '{0}' and program = 'GCG_6586_MATL_HANDLING' and REG_ID = '6586' and SEQ = '1001'",v.Caller.CompanyCode,v.Local.sSql)
+			f.ODBC.Connection!comm.Execute(v.Local.sSql)
+			'add the new registry entry for the printer.
+			f.Intrinsic.String.Format(v.Ambient.Date,"MM/DD/YYYY",V.Local.dDate)
+			f.Global.Registry.AddValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,False,"Paperless","False",0,-999.0,v.Local.dDate.PervasiveDate,12:00:00 AM,v.Local.sPrinter)
+		f.Intrinsic.Control.EndIf
+		f.ODBC.Connection!comm.Close
+		
+	f.Intrinsic.Control.Case(4)
+		'setting the registry key to be paperless
+		f.ODBC.Connection!comm.opencommonconnection
+		f.Intrinsic.String.Build("delete from GS_Registry where company = '{0}' and program = 'GCG_6586_MATL_HANDLING' and REG_ID = '6586' and SEQ = '1001'",v.Caller.CompanyCode,v.Local.sSql)
+		f.ODBC.Connection!comm.Execute(v.Local.sSql)
+		'add the new registry entry for the printer.
+		f.Intrinsic.String.Format(v.Ambient.Date,"MM/DD/YYYY",V.Local.dDate)
+		f.Global.Registry.AddValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,False,"Paperless","True",0,-999.0,v.Local.dDate.PervasiveDate,12:00:00 AM,"")
+		f.ODBC.Connection!comm.Close
+		
+f.Intrinsic.Control.EndSelect
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdPrinter_Click.End
+
+Program.Sub.Comments.Start
+${$5$}$3.0.0.0$}$1
+${$6$}$dfinch$}$20220214122049385$}$2O16bu3pcn8yPLUxA6F2Klx+ibLK1Mdjp0MD6rj0ArW+7zK0yEYL96I1cIO4xS34EaH3L2OodAI=
+Program.Sub.Comments.End
