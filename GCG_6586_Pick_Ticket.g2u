@@ -1,0 +1,474 @@
+﻿'Program.Sub.ScreenSU.Start
+'Gui.Form..Create(DashForm)
+'Gui.Form..Caption("Form")
+'Gui.Form..Size(979,438)
+'Gui.Form..MinX(0)
+'Gui.Form..MinY(0)
+'Gui.Form..Position(0,0)
+'Gui.Form..AlwaysOnTop(False)
+'Gui.Form..FontName("Tahoma")
+'Gui.Form..FontSize(8.25)
+'Gui.Form..ControlBox(True)
+'Gui.Form..MaxButton(True)
+'Gui.Form..MinButton(True)
+'Gui.Form..MousePointer(0)
+'Gui.Form..Moveable(True)
+'Gui.Form..Sizeable(True)
+'Gui.Form..ShowInTaskBar(True)
+'Gui.Form..TitleBar(True)
+'Gui.Form..Event(UnLoad,Form_UnLoad)
+'Gui.Form..BarSaveButton(True,True)
+'Gui.Form..Event(SaveButtonClick,Form_SaveButtonClick)
+'Gui.Form.gsgcMain.Create(GsGridControl)
+'Gui.Form.gsgcMain.Enabled(True)
+'Gui.Form.gsgcMain.Visible(True)
+'Gui.Form.gsgcMain.Zorder(0)
+'Gui.Form.gsgcMain.Size(979,372)
+'Gui.Form.gsgcMain.Position(0,0)
+'Gui.Form.gsgcMain.Anchor(15)
+'Gui.Form.gsgcMain.Event(RowCellClick,gsgcMain_RowCellClick)
+'Gui.Form.gsgcMain.Dock(5)
+'Program.Sub.ScreenSU.End
+
+
+
+Program.Sub.Preflight.Start
+v.Global.bPaperless.Declare
+v.Global.sLmo.Declare
+V.Global.sUser.Declare
+v.Global.iBIRunID.Declare
+Program.Sub.Preflight.End
+
+'Programmed by Don Finch
+'for Harding Group
+'Pick Ticket script
+'Matl Handler Dispatch
+'Custom 8 1/2 x 11 pick report
+'Custom labor requests for forklift drivers
+'Programmed for Phase 1 with paper picklists.  Phase 2 is paperless
+
+Program.Sub.Main.Start
+Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sLabels.Declare
+v.Local.sLabel.Declare
+
+f.Intrinsic.Control.SelectCase(v.Caller.Hook)
+	f.Intrinsic.Control.Case(15710) 'populate hook from GUI
+		v.Passed.000016.Set("Forklift")
+		f.Intrinsic.Control.End
+	f.Intrinsic.Control.Case(49710) 'populate hook from SFDC
+		f.Intrinsic.String.Split(v.Passed.MainFormView-windowsUIButtonPanel-1,"|~|",v.Local.sLabels)
+		f.Intrinsic.String.Replace(v.Local.sLabels(2),"Script 1","Forklift",v.Local.sLabels(2))
+		f.Intrinsic.String.Build("{0}|~|{1}|~|{2}",v.Local.sLabels(0),v.Local.sLabels(1),v.Local.sLabels(2),v.Local.sLabel)
+		v.Passed.MainFormView-windowsUIButtonPanel-1.Set(v.Local.sLabel)
+		f.Intrinsic.Control.End
+	f.Intrinsic.Control.Case(49760) 'script 1 button from SFDC
+		f.Intrinsic.String.Replace(v.Passed.MainFormView-WorkOrder,"Work Order ","",v.Local.sLabel)
+		f.Intrinsic.String.Split(v.Local.sLabel,"-",v.Local.sLabels)
+		F.Intrinsic.Control.CallSub(CheckActive)
+		f.Intrinsic.Control.CallSub(PickType,"JOB",V.Local.sLabels(0),"SUFFIX",V.Local.sLabels(1))
+		f.Intrinsic.Control.CallSub(format_grid)
+		f.Intrinsic.Control.CallSub(checkprint)
+	f.Intrinsic.Control.Case(15760) ' script 1 button from GUI
+		F.Intrinsic.Control.CallSub(CheckActive,"NAME",V.Passed.009994)
+		F.Intrinsic.Control.CallSub(PickType,"JOB",V.Passed.009990,"SUFFIX",V.Passed.009991)
+		f.Intrinsic.Control.CallSub(format_grid)
+		f.Intrinsic.Control.CallSub(checkprint)
+f.Intrinsic.Control.EndSelect
+
+gui.Form..Visible(True)
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Catching.Start
+v.Local.sError.declare(string)
+F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}","GCG_6586_Pick_Ticket.g2u",V.Ambient.NewLine,v.Args.sub,V.Args.errorno,V.args.errordesc,V.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+F.Intrinsic.Control.CallSub(Form_Unload)
+Program.Sub.Catching.End
+
+Program.Sub.PickType.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sJob.Declare
+v.Local.sSuffix.Declare
+
+v.Local.sJob.Set(v.Args.JOB)
+V.Local.sSuffix.Set(V.Args.SUFFIX)
+
+f.Intrinsic.UI.MsgboxExt("Material or Forklift","Material Pick or Forklift Movement","24*!*Material*!*Forklift",275,100)
+'Material = 3 = 'M'
+'Forklift = 4 = 'L'
+F.Intrinsic.Control.SelectCase(V.Ambient.AltBoxClick)
+	F.Intrinsic.Control.Case(3)
+		V.Global.sLMO.Set("M")
+	f.Intrinsic.Control.Case(4)
+		v.Global.sLMO.Set("L")
+	f.Intrinsic.Control.CaseElse
+		f.Intrinsic.Control.End
+F.Intrinsic.Control.EndSelect
+
+f.Intrinsic.Control.CallSub(Initialize_Form)
+f.Intrinsic.Control.CallSub(gather_data,"JOB",V.Local.sJob,"SUFFIX",V.Local.sSuffix)
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.PickType.End
+
+Program.Sub.Initialize_Form.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+Gui.Form..Create(DashForm)
+Gui.Form..Caption("Form")
+Gui.Form..Size(979,438)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..AlwaysOnTop(False)
+Gui.Form..FontName("Tahoma")
+Gui.Form..FontSize(8.25)
+Gui.Form..ControlBox(True)
+Gui.Form..MaxButton(True)
+Gui.Form..MinButton(True)
+Gui.Form..MousePointer(0)
+Gui.Form..Moveable(True)
+Gui.Form..Sizeable(True)
+Gui.Form..ShowInTaskBar(True)
+Gui.Form..TitleBar(True)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form..BarSaveButton(True,True)
+Gui.Form..Event(SaveButtonClick,Form_SaveButtonClick)
+Gui.Form.gsgcMain.Create(GsGridControl)
+Gui.Form.gsgcMain.Enabled(True)
+Gui.Form.gsgcMain.Visible(True)
+Gui.Form.gsgcMain.Zorder(0)
+Gui.Form.gsgcMain.Size(979,372)
+Gui.Form.gsgcMain.Position(0,0)
+Gui.Form.gsgcMain.Anchor(15)
+Gui.Form.gsgcMain.Event(RowCellClick,gsgcMain_RowCellClick)
+Gui.Form.gsgcMain.Dock(5)
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.Initialize_Form.End
+
+Program.Sub.gather_data.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sSql.Declare
+v.Local.sSql2.Declare
+V.Local.sRet.Declare
+
+
+F.ODBC.Connection!con.opencompanyconnection
+
+F.Intrinsic.Control.If(V.Global.sLMO,=,"L")
+	F.Intrinsic.String.Build("Select JOB, SUFFIX, SEQ, PART AS WC, CAST('' AS CHAR(20)) AS FORKLIFT, CAST('' AS CHAR(6)) AS DESTINATION, CAST('' AS VARCHAR) AS COMMENTS, CAST(0 AS INTEGER) AS PRIORITY, CAST(0 AS BIT) AS SELECTED FROM V_JOB_OPERATIONS WHERE JOB = '{0}' AND SUFFIX = '{1}' AND LMO = '{2}' AND SEQ < '995000' AND FLAG_CLOSED <> 'Y'",V.Args.JOB,V.Args.SUFFIX,V.Global.sLMO,V.Local.sSql)
+F.Intrinsic.Control.ElseIf(V.Global.sLMO,=,"M")
+	F.Intrinsic.String.Build("Select JOB, SUFFIX, SEQ, PART, DESCRIPTION, CAST('' AS CHAR(6)) AS DESTINATION, (HOURS_ESTIMATED - HOURS_ACTUAL) AS QTY_REQUIRED, CAST(0 AS INTEGER) AS QTY_REQUESTED, CAST(0 AS INTEGER) AS PRIORITY, CAST('' AS VARCHAR) AS COMMENTS, CAST(0 as BIT) AS SELECTED FROM V_JOB_OPERATIONS WHERE JOB = '{0}' AND SUFFIX = '{1}' AND LMO = '{2}' AND SEQ < '995000' AND FLAG_CLOSED <> 'Y'",V.Args.JOB,V.Args.SUFFIX,v.Global.sLMO,V.Local.sSql)
+	'when we're in materials, we also need to get Exclude items from the BOM where this Part is the parent.
+	f.Intrinsic.String.Build("select part, qty_order from v_job_header where job = '{0}' and suffix = '{1}'",v.Args.JOB, v.Args.SUFFIX,V.Local.sSql2)
+	'get the part from the work order
+	f.ODBC.Connection!con.ExecuteAndReturn(v.Local.sSql2,v.Local.sRet)
+	'get the exclude items from just Tier 1 of this BOM
+	f.Intrinsic.Control.If(v.Local.sRet.IsNotNullOrWhiteSpace)
+		f.Intrinsic.String.Split(v.Local.sRet,"*!*",v.Local.sRet)
+		f.intrinsic.String.Build("select CAST('{2}' as char(6)) as JOB, cast('{3}' as char(3)) as SUFFIX, cast('000000' as char(6)) as SEQ, B.PART, E.DESCRIPTION, CAST(B.QUANTITY * {1} AS NUMERIC(12,4)) AS QTY_REQUIRED, CAST('' AS VARCHAR) AS COMMENTS, CAST(0 as BIT) AS SELECTED from bom_mstr B left join V_BOM_ENG E ON B.PART = E.PART where B.CATEGORY = 'X' and parent = '{0}'",V.Local.sRet(0),V.Local.sRet(1),V.Args.JOB,V.Args.SUFFIX,v.Local.sSql2)
+		f.Data.Datatable.CreateFromSQL("dtExcludes","con",v.Local.sSql2,True)
+				
+	f.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+
+'get labor or material records based on the LMO selection above
+f.Data.Datatable.CreateFromSQL("dtPicks","con",v.Local.sSql,True)
+
+F.Intrinsic.Control.If(V.DataTable.dtExcludes.Exists)
+	f.Intrinsic.Control.If(v.DataTable.dtExcludes.RowCount,>,0)
+		f.Data.Datatable.Merge("dtExcludes","dtPicks",True,1)
+	f.Intrinsic.Control.EndIf
+	F.Data.Datatable.Close("dtExcludes")
+F.Intrinsic.Control.EndIf
+
+'Get work center names in a dictionary to use as the drop down list in the gridview.
+f.Data.Datatable.CreateFromSQL("dtWC","con","select machine, wc_name from v_workcenters order by machine asc",True)
+
+f.ODBC.Connection!con.Close
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.gather_data.End
+
+Program.Sub.format_grid.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sFields.Declare
+v.Local.iCount.Declare
+v.Local.sWorkCenters.Declare
+V.Local.sForklift.Declare
+
+gui.Form.gsgcMain.SuspendLayout
+'create the list of work center for the drop down
+f.Data.Datatable.columntostring("dtWC","machine",v.Local.sWorkCenters)
+
+v.Local.sForklift.Set("Material Assistance*!*Sweep Overs*!*Scrap Overs*!*Consumables Needed*!*Sweep Finish Goods*!*Unload Machine*!*Load Machine*!*Load and Unload")
+
+f.Data.DataView.Create("dtPicks","dvPicks",22)
+gui.Form.gsgcMain.AddGridviewFromDataview("gvPicks","dtPicks","dvPicks")
+
+gui.Form.gsgcMain.SetGridviewProperty("gvPicks",v.Enum.GridViewPropertyNames!ShowAutoFilterRow,True)
+gui.Form.gsgcMain.SetGridviewProperty("gvPicks",v.Enum.GridViewPropertyNames!ColumnAutoWidth,True)
+gui.Form.gsgcMain.SetGridviewProperty("gvPicks",v.Enum.GridViewPropertyNames!ShowGroupPanel,False)
+
+
+f.Intrinsic.String.Split(v.DataTable.dtPicks.FieldNames,"*!*",v.Local.sFields)
+
+f.Intrinsic.Control.For(v.Local.iCount,0,v.Local.sFields.UBound,1)
+	f.Intrinsic.Control.SelectCase(v.Local.sFields(v.Local.iCount))
+		'string fields
+		f.Intrinsic.Control.caseAny("JOB","SUFFIX")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!Visible,False)
+		f.Intrinsic.Control.caseAny("SEQ","WC")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Near")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Near")
+		f.Intrinsic.Control.caseAny("PART","FORKLIFT")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Near")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Near")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!Width,100)
+		f.Intrinsic.Control.caseAny("DESCRIPTION","DESTINATION")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Near")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Near")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!Width,175)
+		f.Intrinsic.Control.Case("COMMENTS")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Near")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Near")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!AllowEdit,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!ReadOnly,False)			
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!Width,200)			
+		'floag fields
+		f.Intrinsic.Control.case("QTY_REQUIRED")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Far")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Far")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!DisplayCustomNumeric,"#,###")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!Width,100)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!AllowEdit,False)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!ReadOnly,True)
+		f.Intrinsic.Control.caseAny("QTY_REQUESTED","PRIORITY")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Far")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Far")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!DisplayCustomNumeric,"#,###")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!AllowEdit,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!ReadOnly,False)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!Width,100)
+		f.Intrinsic.Control.caseAny("SELECTED")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderHAlignment,"Center")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!HeaderFontBold,True)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!CellHAlignment,"Center")
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!AllowEdit,False)
+			gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!ReadOnly,True)
+					
+	f.Intrinsic.Control.EndSelect
+	'destination should be a drop down list
+	f.Intrinsic.Control.If(v.Local.sFields(v.Local.iCount),=,"DESTINATION")
+		gui.Form.gsgcMain.ColumnEdit("gvPicks","DESTINATION","DropDownList",V.Local.sWorkCenters)
+		gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!AllowEdit,True)
+		gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!ReadOnly,False)
+	f.Intrinsic.Control.EndIf
+	'forklift should be a drop down list
+	F.Intrinsic.Control.If(V.Local.sFields(V.Local.iCount),=,"FORKLIFT")
+		gui.Form.gsgcMain.ColumnEdit("gvPicks","FORKLIFT","DropDownList",V.Local.sForklift)
+		gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!AllowEdit,True)
+		gui.Form.gsgcMain.SetColumnProperty("gvPicks",v.Local.sFields(v.Local.iCount),v.Enum.ColumnPropertyNames!ReadOnly,False)
+	F.Intrinsic.Control.EndIf
+
+
+f.Intrinsic.Control.Next(v.Local.iCount)
+
+gui.Form.gsgcMain.ResumeLayout
+
+gui.Form.gsgcMain.MainView("gvPicks")
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.format_grid.End
+Program.Sub.Form_UnLoad.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+f.Intrinsic.Control.If(v.ODBC.con.exists,=,True)
+	f.ODBC.Connection!con.Close
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.End
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.gsgcMain_RowCellClick.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+f.Intrinsic.Control.If(v.Args.COLUMN,=,"SELECTED")
+	F.Data.Datatable.SetValue("dtPicks",v.Args.ROWINDEX,"SELECTED",V.DataTable.dtPicks(V.Args.ROWINDEX).SELECTED!FIELDVALNOT)
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.gsgcMain_RowCellClick.End
+
+Program.Sub.CheckActive.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sName.Declare
+v.Local.sInitial.Declare
+
+f.Intrinsic.Control.If(v.Args.NAME,<>,"")
+	F.Intrinsic.String.Split(V.Args.NAME," ",v.Local.sName)
+	f.Intrinsic.String.Left(v.Local.sName(0),1,v.Local.sInitial)
+	f.Intrinsic.String.Build("{0}{1}",v.Local.sInitial,v.Local.sName(1),v.Global.sUser)
+f.Intrinsic.Control.Else
+	f.Intrinsic.UI.Msgbox("Employee Not Selected","Error")
+	f.Intrinsic.Control.CallSub(form_unload)
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.CheckActive.End
+
+Program.Sub.Form_SaveButtonClick.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sRows.Declare
+V.Local.dDate.Declare
+V.Local.iTXID.Declare
+v.Local.iCount.Declare
+
+f.Data.DataView.SetFilter("dtPicks","dvPicks","SELECTED = 1")
+F.Data.DataView.ToDataTable("dtPicks","dvPicks","Temp")
+
+
+F.Intrinsic.Control.If(V.Global.sLmo.UCase,=,"M")
+	f.Intrinsic.Control.For(v.Local.iCount,0,v.DataTable.temp.RowCount--,1)
+		f.Intrinsic.Control.If(v.DataTable.temp(v.Local.iCount).QTY_REQUESTED!FIELDVAL,=,0,AND,V.DataTable.TEMP(V.Local.iCount).QTY_REQUIRED!FIELDVAL,>,0)
+			F.Data.Datatable.SetValue("TEMP",V.Local.iCount,"QTY_REQUESTED",V.DataTable.TEMP(V.Local.iCount).QTY_REQUIRED!FIELDVAL)
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Next(v.Local.iCount)
+F.Intrinsic.Control.EndIf
+
+F.Data.Datatable.AddColumn("Temp","REQ_BY","STRING",V.Global.sUser.UCase,15)
+f.Intrinsic.String.Format(v.Ambient.Date,"MM/DD/YYYY",V.Local.dDate)
+F.Data.Datatable.AddColumn("Temp","DATE_REQ","DATE",V.Local.dDate)
+f.Data.Datatable.AddColumn("Temp","STATUS","STRING","DELIVERED")
+F.Global.BI.GetRunID(v.Global.iBIRunID)
+f.Data.Datatable.AddColumn("Temp","RUNID","LONG",V.Global.iBIRunID)
+F.Data.Datatable.AddColumn("Temp","TYPE","STRING",V.Global.sLmo)
+
+
+F.ODBC.Connection!con.opencompanyconnection
+
+f.ODBC.Connection!con.GetID("GCG_6586_MATL_HNDL","TX_ID",True,v.Local.iTXID)
+f.Data.Datatable.AddColumn("Temp","TX_ID","LONG")
+F.Data.Datatable.SetSeries("Temp","TX_ID",V.Local.iTXID,1)
+
+
+F.Intrinsic.Control.If(V.Global.sLmo,=,"M")
+	F.Data.Datatable.SaveToDB("Temp","con","GCG_6586_MATL_HNDL","TX_ID",1,"TX_ID@!@TX_ID*!*JOB@!@JOB*!*SUFFIX@!@SUFFIX*!*SEQ@!@SEQ*!*PART@!@PART*!*QTY_REQUESTED@!@QUANTITY*!*DESCRIPTION@!@DESCRIPTION*!*DESTINATION@!@DESTINATION*!*REQ_BY@!@REQ_BY*!*DATE_REQ@!@DATE_REQ*!*STATUS@!@STATUS*!*TYPE@!@TYPE*!*COMMENTS@!@COMMENTS*!*PRIORITY@!@PRIORITY*!*RUNID@!@RUNID")
+f.Intrinsic.Control.ElseIf(v.Global.sLmo,=,"L")
+	F.Data.Datatable.AddColumn("Temp","DESCRIPTION","STRING","FORKLIFT NEEDED")
+	f.Data.Datatable.SaveToDB("Temp","con","GCG_6586_MATL_HNDL","TX_ID",1,"TX_ID@!@TX_ID*!*JOB@!@JOB*!*SUFFIX@!@SUFFIX*!*SEQ@!@SEQ*!*FORKLIFT@!@PART*!*DESCRIPTION@!@DESCRIPTION*!*DESTINATION@!@DESTINATION*!*REQ_BY@!@REQ_BY*!*DATE_REQ@!@DATE_REQ*!*STATUS@!@STATUS*!*TYPE@!@TYPE*!*COMMENTS@!@COMMENTS*!*PRIORITY@!@PRIORITY*!*RUNID@!@RUNID")
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!con.Close
+
+f.Intrinsic.Control.If(v.Global.bPaperless,=,False)
+	f.Intrinsic.Control.CallSub(print_tickets)
+f.Intrinsic.Control.Else
+	f.Intrinsic.Control.CallSub(form_unload)
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.Form_SaveButtonClick.End
+
+Program.Sub.checkprint.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sReturn.Declare
+
+'this subroutine reads the registry for a special "paperless" registry entry.  If the bVal is False, then Harding hasn't gone paperless yet.  If it reads as True, then they are paperless.
+
+
+f.Global.Registry.ReadValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,5,"",v.local.sReturn)
+
+F.Intrinsic.Control.If(v.Local.sReturn,=,"")
+	'Delete this key and change the bVale from False to True when Harding decides to go paperless.
+	f.Global.Registry.AddValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,False,"Paperless","False",0,-999.0,v.Local.dDate,12:00:00 AM,"")
+f.Intrinsic.Control.ElseIf(v.Local.sReturn,=,"Paperless")
+	f.Global.Registry.ReadValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,0,"",v.Global.bPaperless)
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.checkprint.End
+
+Program.Sub.print_tickets.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+v.Local.sReport.Declare
+v.Local.iRptID.Declare
+v.Local.sParams.Declare
+V.Local.sParamNames.Declare
+v.Local.sPrinter.Declare
+
+
+f.Intrinsic.String.Build("{0}*!*{1}",v.Global.iBIRunID,v.Global.sUser.UCase,v.Local.sParams)
+f.Intrinsic.String.Split(v.Local.sParams,"*!*",v.Local.sParams)
+
+v.Local.sParamNames.Set("RUNID*!*USERID")
+F.Intrinsic.String.Split(V.Local.sParamNames,"*!*",v.Local.sParamNames)
+
+
+v.Local.sParams.Set(v.Global.iBIRunID)
+'get the default printer to use
+f.Global.Registry.ReadValue("supervsr",v.Caller.CompanyCode,"GCG_6586_MATL_Handling",6586,1001,6,"",v.Local.sPrinter)
+
+f.Intrinsic.String.Build("{0}\Custom\GCG_6586_PICK_TICKET.RPT",v.Caller.BusintDir,V.Local.sReport)
+F.Global.BI.InitializeReport("GCG_6586_PICK_TICKET",V.Local.sReport,V.Local.iRptID)
+
+f.Global.BI.PrintReport(v.Local.iRptID,8,v.Local.sParamNames,v.Local.sParams,v.Local.sPrinter,True)
+'f.Global.BI.PrintReport(v.Local.iRptID,0,v.Local.sParamNames,v.Local.sParams,"",True)
+
+
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.print_tickets.End
+
+Program.Sub.Comments.Start
+${$5$}$3.0.0.0$}$1
+${$6$}$dfinch$}$20220223135249150$}$2O16bu3pcn8yPLUxA6F2Klx+ibLK1MdjsgUudvNVYXGV51Pw8E25HJV45xYWP6vW82N3oOY7DuU=
+Program.Sub.Comments.End
